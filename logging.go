@@ -7,33 +7,33 @@ import (
 	"time"
 )
 
-type logger struct {
+type Logger struct {
 	debug  bool
 	output io.Writer
 }
 
-func New(out io.Writer, debug bool) *logger {
-	return &logger{
+func New(out io.Writer, debug bool) *Logger {
+	return &Logger{
 		debug:  debug,
 		output: out,
 	}
 }
 
-func (l *logger) Errorf(format string, msg ...interface{}) {
+func (l *Logger) Errorf(format string, msg ...interface{}) {
 	_print("error", _msgWrap(format, msg...))
 }
 
-func (l *logger) Infof(format string, msg ...interface{}) {
+func (l *Logger) Infof(format string, msg ...interface{}) {
 	_print("info", _msgWrap(format, msg...))
 }
 
-func (l *logger) Debugf(format string, msg ...interface{}) {
+func (l *Logger) Debugf(format string, msg ...interface{}) {
 	if l.debug {
 		_print("debug", _msgWrap(format, msg...))
 	}
 }
 
-func (l *logger) Fatalf(format string, msg ...interface{}) {
+func (l *Logger) Fatalf(format string, msg ...interface{}) {
 	_print("fatal", _msgWrap(format, msg...))
 	os.Exit(127)
 }
