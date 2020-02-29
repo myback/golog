@@ -63,7 +63,7 @@ func (l *Logger) Fatal(msg string) {
 
 func (l *Logger) Access(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var u, h string
+		var u string
 		login, _, ok := r.BasicAuth()
 		if ok {
 			u = login
@@ -71,18 +71,20 @@ func (l *Logger) Access(next http.Handler) http.Handler {
 			u = "-"
 		}
 
+		accessFmt := `user="%s" session_id="%s" address="%s" uri="%s" method="%s" proto="%s" referer="%s" `
 		if l.DebugSet {
 			var hl []string
 			for k, v := range r.Header {
-				hl = append(hl, fmt.Sprintf(`http_%s="%s"`, k, v[0]))
+				hl = append(hl, fmt.Sprintf(`http_%s="%s"`, strings.ToLower(strings.Replace(k, "-", "_", -1)), v[0]))
 			}
 
-			h = " " + strings.Join(hl, " ")
+			accessFmt = accessFmt + strings.Join(hl, " ")
+		} else {
+			accessFmt = accessFmt + fmt.Sprintf(`useragent="%s"`, r.UserAgent())
 		}
 
 		xSess := GenerateRandString(16)
-		l.stdoutWrite("access", fmt.Sprintf(`user="%s" session_id="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
-			u, xSess, r.RemoteAddr, r.Host, r.RequestURI, r.Method, r.Proto, r.UserAgent(), r.Referer()))
+		l.stdoutWrite("access", fmt.Sprintf(accessFmt, u, xSess, r.RemoteAddr, r.RequestURI, r.Method, r.Proto, r.Referer()))
 
 		r.Header.Set("X-Session-ID", xSess)
 		next.ServeHTTP(w, r)
