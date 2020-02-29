@@ -110,10 +110,12 @@ func msgWrap(msg interface{}) string {
 }
 
 func GenerateRandString(n int) string {
-	letters := `1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_`
-	letterIdxBits := 6                    // 6 bits to represent a letter index
-	letterIdxMask := 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax := 63 / letterIdxBits    // # of letter indices fitting in 63 bits
+	const (
+		letters       = `1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_`
+		letterIdxBits = 6                    // 6 bits to represent a letter index
+		letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+		letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+	)
 
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, n)
