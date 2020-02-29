@@ -10,52 +10,53 @@ import (
 )
 
 type Logger struct {
-	debug  bool
-	output io.Writer
+	DebugSet       bool
+	Stdout, Stderr io.Writer
 }
 
-func New(out io.Writer, debug bool) *Logger {
+func New(out, e io.Writer, debug bool) *Logger {
 	return &Logger{
-		debug:  debug,
-		output: out,
+		DebugSet: debug,
+		Stdout:   out,
+		Stderr:   e,
 	}
 }
 
 func (l *Logger) Errorf(format string, msg ...interface{}) {
-	l.write("error", fmt.Sprintf(format, msg...))
+	l.stderrWrite("error", fmt.Sprintf(format, msg...))
 }
 
 func (l *Logger) Error(msg interface{}) {
-	l.write("error", msgWrap(msg))
+	l.stderrWrite("error", msgWrap(msg))
 }
 
 func (l *Logger) Infof(format string, msg ...interface{}) {
-	l.write("info", fmt.Sprintf(format, msg...))
+	l.stdoutWrite("info", fmt.Sprintf(format, msg...))
 }
 
 func (l *Logger) Info(msg string) {
-	l.write("info", msgWrap(msg))
+	l.stdoutWrite("info", msgWrap(msg))
 }
 
 func (l *Logger) Debugf(format string, msg ...interface{}) {
-	if l.debug {
-		l.write("debug", fmt.Sprintf(format, msg...))
+	if l.DebugSet {
+		l.stdoutWrite("debug", fmt.Sprintf(format, msg...))
 	}
 }
 
 func (l *Logger) Debug(msg string) {
-	if l.debug {
-		l.write("debug", msgWrap(msg))
+	if l.DebugSet {
+		l.stdoutWrite("debug", msgWrap(msg))
 	}
 }
 
 func (l *Logger) Fatalf(format string, msg ...interface{}) {
-	l.write("fatal", fmt.Sprintf(format, msg...))
+	l.stderrWrite("fatal", fmt.Sprintf(format, msg...))
 	os.Exit(127)
 }
 
 func (l *Logger) Fatal(msg string) {
-	l.write("fatal", msgWrap(msg))
+	l.stderrWrite("fatal", msgWrap(msg))
 	os.Exit(127)
 }
 
@@ -78,15 +79,23 @@ func (l *Logger) Access(next http.Handler, logHeader bool) http.Handler {
 			h = " " + strings.Join(hl, " ")
 		}
 
-		l.write("access", fmt.Sprintf(`user="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
+		l.stdoutWrite("access", fmt.Sprintf(`user="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
 			u, r.RemoteAddr, r.Host, r.RequestURI, r.Method, r.Proto, r.UserAgent(), r.Referer()))
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (l *Logger) write(level, msg string) {
-	_, err := fmt.Fprintf(l.output, `time="%s" level="%s" %s\n`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
+func (l *Logger) stdoutWrite(level, msg string) {
+	_, err := fmt.Fprintf(l.Stdout, `time="%s" level="%s" %s\n`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
+	if err != nil {
+		fmt.Printf("Log write failed: %s", err)
+	}
+
+}
+
+func (l *Logger) stderrWrite(level, msg string) {
+	_, err := fmt.Fprintf(l.Stderr, `time="%s" level="%s" %s\n`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
 	if err != nil {
 		fmt.Printf("Log write failed: %s", err)
 	}
