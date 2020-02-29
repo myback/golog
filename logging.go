@@ -24,6 +24,15 @@ func New(out, e io.Writer, debug bool) *Logger {
 }
 
 func (l *Logger) Errorf(format string, msg ...interface{}) {
+	switch len(msg) {
+	case 0:
+		l.Error(format)
+		return
+	case 1:
+		l.Error(fmt.Sprintf(format, msg))
+		return
+	}
+
 	l.stderrWrite("error", fmt.Sprintf(format, msg...))
 }
 
@@ -32,6 +41,15 @@ func (l *Logger) Error(msg interface{}) {
 }
 
 func (l *Logger) Infof(format string, msg ...interface{}) {
+	switch len(msg) {
+	case 0:
+		l.Info(format)
+		return
+	case 1:
+		l.Info(fmt.Sprintf(format, msg))
+		return
+	}
+
 	l.stdoutWrite("info", fmt.Sprintf(format, msg...))
 }
 
@@ -40,6 +58,15 @@ func (l *Logger) Info(msg string) {
 }
 
 func (l *Logger) Debugf(format string, msg ...interface{}) {
+	switch len(msg) {
+	case 0:
+		l.Debug(format)
+		return
+	case 1:
+		l.Debug(fmt.Sprintf(format, msg))
+		return
+	}
+
 	if l.DebugSet {
 		l.stdoutWrite("debug", fmt.Sprintf(format, msg...))
 	}
@@ -52,6 +79,15 @@ func (l *Logger) Debug(msg string) {
 }
 
 func (l *Logger) Fatalf(format string, msg ...interface{}) {
+	switch len(msg) {
+	case 0:
+		l.Fatal(format)
+		return
+	case 1:
+		l.Fatal(fmt.Sprintf(format, msg))
+		return
+	}
+
 	l.stderrWrite("fatal", fmt.Sprintf(format, msg...))
 	os.Exit(127)
 }
