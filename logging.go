@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -79,9 +80,11 @@ func (l *Logger) Access(next http.Handler) http.Handler {
 			h = " " + strings.Join(hl, " ")
 		}
 
-		l.stdoutWrite("access", fmt.Sprintf(`user="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
-			u, r.RemoteAddr, r.Host, r.RequestURI, r.Method, r.Proto, r.UserAgent(), r.Referer()))
+		xSess := GenerateRandString(16)
+		l.stdoutWrite("access", fmt.Sprintf(`user="%s" session_id="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
+			u, xSess, r.RemoteAddr, r.Host, r.RequestURI, r.Method, r.Proto, r.UserAgent(), r.Referer()))
 
+		r.Header.Set("X-Session-ID", xSess)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -104,4 +107,27 @@ func (l *Logger) stderrWrite(level, msg string) {
 
 func msgWrap(msg interface{}) string {
 	return fmt.Sprintf(`message="%s"`, msg)
+}
+
+func GenerateRandString(n int) string {
+	letters := `1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_`
+	letterIdxBits := 6                    // 6 bits to represent a letter index
+	letterIdxMask := 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax := 63 / letterIdxBits    // # of letter indices fitting in 63 bits
+
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, n)
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letters) {
+			b[i] = letters[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
 }
