@@ -22,15 +22,15 @@ func New(out io.Writer, debug bool) *Logger {
 }
 
 func (l *Logger) Errorf(format string, msg ...interface{}) {
-	l.write("error", msgWrapf(format, msg...))
+	l.write("error", fmt.Sprintf(format, msg...))
 }
 
-func (l *Logger) Error(msg string) {
+func (l *Logger) Error(msg interface{}) {
 	l.write("error", msgWrap(msg))
 }
 
 func (l *Logger) Infof(format string, msg ...interface{}) {
-	l.write("info", msgWrapf(format, msg...))
+	l.write("info", fmt.Sprintf(format, msg...))
 }
 
 func (l *Logger) Info(msg string) {
@@ -39,7 +39,7 @@ func (l *Logger) Info(msg string) {
 
 func (l *Logger) Debugf(format string, msg ...interface{}) {
 	if l.debug {
-		l.write("debug", msgWrapf(format, msg...))
+		l.write("debug", fmt.Sprintf(format, msg...))
 	}
 }
 
@@ -50,7 +50,7 @@ func (l *Logger) Debug(msg string) {
 }
 
 func (l *Logger) Fatalf(format string, msg ...interface{}) {
-	l.write("fatal", msgWrapf(format, msg...))
+	l.write("fatal", fmt.Sprintf(format, msg...))
 	os.Exit(127)
 }
 
@@ -78,7 +78,7 @@ func (l *Logger) Access(next http.Handler, logHeader bool) http.Handler {
 			h = " " + strings.Join(hl, " ")
 		}
 
-		l.write("access", msgWrapf(`user="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
+		l.write("access", fmt.Sprintf(`user="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
 			u, r.RemoteAddr, r.Host, r.RequestURI, r.Method, r.Proto, r.UserAgent(), r.Referer()))
 
 		next.ServeHTTP(w, r)
@@ -86,17 +86,13 @@ func (l *Logger) Access(next http.Handler, logHeader bool) http.Handler {
 }
 
 func (l *Logger) write(level, msg string) {
-	_, err := fmt.Fprintf(l.output, `time="%s" level="%s" %s`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
+	_, err := fmt.Fprintf(l.output, `time="%s" level="%s" %s\n`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
 	if err != nil {
 		fmt.Printf("Log write failed: %s", err)
 	}
 
 }
 
-func msgWrapf(format string, msg ...interface{}) string {
-	return fmt.Sprintf(format, msg...)
-}
-
-func msgWrap(msg string) string {
+func msgWrap(msg interface{}) string {
 	return fmt.Sprintf(`message="%s"`, msg)
 }
