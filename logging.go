@@ -90,7 +90,7 @@ func (l *Logger) Access(next http.Handler) http.Handler {
 }
 
 func (l *Logger) stdoutWrite(level, msg string) {
-	_, err := fmt.Fprintf(l.Stdout, `time="%s" level="%s" %s\n`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
+	_, err := fmt.Fprintf(l.Stdout, `time="%s" level="%s" %s`+"\n", time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
 	if err != nil {
 		fmt.Printf("Log write failed: %s", err)
 	}
@@ -98,7 +98,7 @@ func (l *Logger) stdoutWrite(level, msg string) {
 }
 
 func (l *Logger) stderrWrite(level, msg string) {
-	_, err := fmt.Fprintf(l.Stderr, `time="%s" level="%s" %s\n`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
+	_, err := fmt.Fprintf(l.Stderr, `time="%s" level="%s" %s`+"\n", time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
 	if err != nil {
 		fmt.Printf("Log write failed: %s", err)
 	}
