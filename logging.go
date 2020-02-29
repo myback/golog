@@ -3,7 +3,9 @@ package logging
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -20,33 +22,81 @@ func New(out io.Writer, debug bool) *Logger {
 }
 
 func (l *Logger) Errorf(format string, msg ...interface{}) {
-	_print("error", _msgWrap(format, msg...))
+	l.write("error", msgWrapf(format, msg...))
+}
+
+func (l *Logger) Error(msg string) {
+	l.write("error", msgWrap(msg))
 }
 
 func (l *Logger) Infof(format string, msg ...interface{}) {
-	_print("info", _msgWrap(format, msg...))
+	l.write("info", msgWrapf(format, msg...))
+}
+
+func (l *Logger) Info(msg string) {
+	l.write("info", msgWrap(msg))
 }
 
 func (l *Logger) Debugf(format string, msg ...interface{}) {
 	if l.debug {
-		_print("debug", _msgWrap(format, msg...))
+		l.write("debug", msgWrapf(format, msg...))
+	}
+}
+
+func (l *Logger) Debug(msg string) {
+	if l.debug {
+		l.write("debug", msgWrap(msg))
 	}
 }
 
 func (l *Logger) Fatalf(format string, msg ...interface{}) {
-	_print("fatal", _msgWrap(format, msg...))
+	l.write("fatal", msgWrapf(format, msg...))
 	os.Exit(127)
 }
 
-func _print(level, msg string) {
-	fmt.Printf(`time="%s" level="%s" %s`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
-	fmt.Println()
+func (l *Logger) Fatal(msg string) {
+	l.write("fatal", msgWrap(msg))
+	os.Exit(127)
 }
 
-func _msgWrap(format string, msg ...interface{}) string {
-	if len(msg) == 0 {
-		return fmt.Sprintf(`message="%s"`, format)
+func (l *Logger) Access(next http.Handler, logHeader bool) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var u, h string
+		login, _, ok := r.BasicAuth()
+		if ok {
+			u = login
+		} else {
+			u = "-"
+		}
+
+		if logHeader {
+			var hl []string
+			for k, v := range r.Header {
+				hl = append(hl, fmt.Sprintf(`http_%s="%s"`, k, v[0]))
+			}
+
+			h = " " + strings.Join(hl, " ")
+		}
+
+		l.write("access", msgWrapf(`user="%s" address="%s" host="%s" uri="%s" method="%s" proto="%s" useragent="%s" referer="%s"`+h,
+			u, r.RemoteAddr, r.Host, r.RequestURI, r.Method, r.Proto, r.UserAgent(), r.Referer()))
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (l *Logger) write(level, msg string) {
+	_, err := fmt.Fprintf(l.output, `time="%s" level="%s" %s`, time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), level, msg)
+	if err != nil {
+		fmt.Printf("Log write failed: %s", err)
 	}
 
+}
+
+func msgWrapf(format string, msg ...interface{}) string {
 	return fmt.Sprintf(format, msg...)
+}
+
+func msgWrap(msg string) string {
+	return fmt.Sprintf(`message="%s"`, msg)
 }
