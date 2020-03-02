@@ -8,12 +8,28 @@ import (
 	"time"
 )
 
-func New(stdout, stderr io.Writer, lvl Level, formatter Formatter) *Logger {
+type Init struct {
+	Level
+	Stdout, Stderr io.Writer
+	Formatter
+}
+
+func (i *Init) New() *Logger {
+	stdout := i.Stdout
+	if i.Stdout == nil {
+		stdout = os.Stdout
+	}
+
+	stderr := i.Stderr
+	if i.Stderr == nil {
+		stdout = os.Stderr
+	}
+
 	return &Logger{
-		level:  lvl,
+		level:  i.Level,
 		stdout: stdout,
 		stderr: stderr,
-		fmt:    formatter,
+		fmt:    i.Formatter,
 	}
 }
 
