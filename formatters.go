@@ -27,16 +27,14 @@ func (t TextFormatter) Format(msg LogMessage) (string, error) {
 		"message",
 	}
 
-	tmpMsg := msg
-
 	for _, k := range fixedKey {
 		if v, ok := msg[k]; ok {
 			buf = append(buf, fmt.Sprintf("%s=\"%s\"", k, v))
-			delete(tmpMsg, k)
+			delete(msg, k)
 		}
 	}
 
-	for k, v := range tmpMsg {
+	for k, v := range msg {
 		buf = append(buf, fmt.Sprintf("%s=\"%s\"", k, v))
 	}
 
