@@ -16,13 +16,13 @@ type Init struct {
 
 func (i *Init) New() *Logger {
 	stdout := i.Stdout
-	if i.Stdout == nil {
+	if stdout == nil {
 		stdout = os.Stdout
 	}
 
 	stderr := i.Stderr
-	if i.Stderr == nil {
-		stdout = os.Stderr
+	if stderr == nil {
+		stderr = os.Stderr
 	}
 
 	return &Logger{
