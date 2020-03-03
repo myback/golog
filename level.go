@@ -13,6 +13,7 @@ const (
 	Warning
 	Info
 	Debug
+	Trace
 )
 
 func (l Level) ToString() string {
@@ -27,6 +28,8 @@ func (l Level) ToString() string {
 		return "Info"
 	case Debug:
 		return "Debug"
+	case Trace:
+		return "Trace"
 	default:
 		return "Custom"
 	}
@@ -44,6 +47,8 @@ func (l *Level) UnmarshalText(lvl []byte) error {
 		*l = Info
 	case "d", "dbg", "debug":
 		*l = Debug
+	case "t", "trace":
+		*l = Trace
 	default:
 		*l = Custom
 	}
