@@ -93,6 +93,14 @@ func (l *Log) Errorf(msg LogMessage) {
 	l.print(Error, msg)
 }
 
+func (l *Log) Warning(msg string) {
+	l.Warningf(LogMessage{KeyMessage: msg})
+}
+
+func (l *Log) Warningf(msg LogMessage) {
+	l.print(Warning, msg)
+}
+
 func (l *Log) Info(msg string) {
 	l.Infof(LogMessage{KeyMessage: msg})
 }
