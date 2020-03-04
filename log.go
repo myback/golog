@@ -69,7 +69,7 @@ func (l *Log) GetLevel() Level {
 }
 
 func (l *Log) IsDebug() bool {
-	return l.isLevel(Debug)
+	return l.level == Debug
 }
 
 func (l *Log) isLevel(level Level) bool {
