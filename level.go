@@ -19,35 +19,35 @@ const (
 func (l Level) ToString() string {
 	switch l {
 	case Fatal:
-		return "Fatal"
+		return "fatal"
 	case Error:
-		return "Error"
+		return "error"
 	case Warning:
-		return "Warning"
+		return "warning"
 	case Info:
-		return "Info"
+		return "info"
 	case Debug:
-		return "Debug"
+		return "debug"
 	case Trace:
-		return "Trace"
+		return "trace"
 	default:
-		return "Custom"
+		return "custom"
 	}
 }
 
 func (l *Level) UnmarshalText(lvl []byte) error {
 	switch strings.ToLower(string(lvl)) {
-	case "f", "fatal":
+	case "f", "0", "fatal":
 		*l = Fatal
-	case "e", "err", "error":
+	case "e", "1", "err", "error":
 		*l = Error
-	case "w", "warn", "warning":
+	case "w", "2", "warn", "warning":
 		*l = Warning
-	case "i", "info":
+	case "i", "3", "info":
 		*l = Info
-	case "d", "dbg", "debug":
+	case "d", "4", "dbg", "debug":
 		*l = Debug
-	case "t", "trace":
+	case "t", "5", "trace":
 		*l = Trace
 	default:
 		*l = Custom

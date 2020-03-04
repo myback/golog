@@ -25,9 +25,25 @@ func (lm LogMessage) Put(k string, v interface{}) {
 	lm[k] = v
 }
 
+func (lm LogMessage) PutMessage(v interface{}) {
+	lm.Put(KeyMessage, v)
+}
+
+func (lm LogMessage) PutError(v interface{}) {
+	lm.Put(KeyError, v)
+}
+
+func (lm LogMessage) Get(k string, fallback interface{}) interface{} {
+	if v, ok := lm[k]; ok {
+		return v
+	}
+
+	return fallback
+}
+
 func New(lvl Level, logger Logger, fmtTime string) *Log {
-	if lvl == 0 {
-		lvl = 4
+	if lvl == Custom {
+		lvl = Info
 	}
 
 	if logger == nil {
@@ -93,6 +109,14 @@ func (l *Log) Debugf(msg LogMessage) {
 	l.print(Debug, msg)
 }
 
+func (l *Log) Trace(msg string) {
+	l.Tracef(LogMessage{KeyMessage: msg})
+}
+
+func (l *Log) Tracef(msg LogMessage) {
+	l.print(Trace, msg)
+}
+
 func (l *Log) print(lvl Level, msg LogMessage) {
 	if !l.isLevel(lvl) {
 		return
@@ -101,10 +125,12 @@ func (l *Log) print(lvl Level, msg LogMessage) {
 	msg[KeyTime] = time.Now().UTC().Format(l.timeFormat)
 	msg[KeyLevel] = lvl.ToString()
 
-	l.Write(msg)
+	if err := l.logger.Write(msg); err != nil {
+		fmt.Fprintf(os.Stderr, "%s ERROR: Print formatter failed: %s", msg["time"], err)
+	}
 }
 
-func (l Log) CustomLevelMessage(level string) LogMessage {
+func (l Log) NewLogMessage(level string) LogMessage {
 	return LogMessage{
 		KeyTime:  time.Now().UTC().Format(l.timeFormat),
 		KeyLevel: level,
@@ -112,7 +138,14 @@ func (l Log) CustomLevelMessage(level string) LogMessage {
 }
 
 func (l *Log) Write(msg LogMessage) {
-	if err := l.logger.Write(msg); err != nil {
-		fmt.Fprintf(os.Stderr, "%s ERROR: Print formatter failed: %s", msg["time"], err)
+	lvl, ok := msg.Get(KeyLevel, "").(Level)
+	if !ok {
+		lvl = Custom
+	}
+
+	if l.isLevel(lvl) || lvl == Custom {
+		if err := l.logger.Write(msg); err != nil {
+			fmt.Fprintf(os.Stderr, "%s ERROR: Print formatter failed: %s", msg["time"], err)
+		}
 	}
 }
