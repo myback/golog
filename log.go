@@ -76,8 +76,8 @@ func (l *Log) isLevel(level Level) bool {
 	return l.level >= level
 }
 
-func (l *Log) Fatal(msg string) {
-	l.Fatalf(LogMessage{KeyMessage: msg})
+func (l *Log) Fatal(msg interface{}) {
+	l.Fatalf(LogMessage{KeyMessage: fmt.Sprintf("%s", msg)})
 }
 
 func (l *Log) Fatalf(msg LogMessage) {
@@ -85,40 +85,40 @@ func (l *Log) Fatalf(msg LogMessage) {
 	os.Exit(127)
 }
 
-func (l *Log) Error(msg string) {
-	l.Errorf(LogMessage{KeyMessage: msg})
+func (l *Log) Error(msg interface{}) {
+	l.Errorf(LogMessage{KeyMessage: fmt.Sprintf("%s", msg)})
 }
 
 func (l *Log) Errorf(msg LogMessage) {
 	l.print(Error, msg)
 }
 
-func (l *Log) Warning(msg string) {
-	l.Warningf(LogMessage{KeyMessage: msg})
+func (l *Log) Warning(msg interface{}) {
+	l.Warningf(LogMessage{KeyMessage: fmt.Sprintf("%s", msg)})
 }
 
 func (l *Log) Warningf(msg LogMessage) {
 	l.print(Warning, msg)
 }
 
-func (l *Log) Info(msg string) {
-	l.Infof(LogMessage{KeyMessage: msg})
+func (l *Log) Info(msg interface{}) {
+	l.Infof(LogMessage{KeyMessage: fmt.Sprintf("%s", msg)})
 }
 
 func (l *Log) Infof(msg LogMessage) {
 	l.print(Info, msg)
 }
 
-func (l *Log) Debug(msg string) {
-	l.Debugf(LogMessage{KeyMessage: msg})
+func (l *Log) Debug(msg interface{}) {
+	l.Debugf(LogMessage{KeyMessage: fmt.Sprintf("%s", msg)})
 }
 
 func (l *Log) Debugf(msg LogMessage) {
 	l.print(Debug, msg)
 }
 
-func (l *Log) Trace(msg string) {
-	l.Tracef(LogMessage{KeyMessage: msg})
+func (l *Log) Trace(msg interface{}) {
+	l.Tracef(LogMessage{KeyMessage: fmt.Sprintf("%s", msg)})
 }
 
 func (l *Log) Tracef(msg LogMessage) {
