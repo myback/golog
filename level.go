@@ -1,6 +1,7 @@
 package golog
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -36,7 +37,16 @@ func (l Level) ToString() string {
 }
 
 func (l *Level) UnmarshalText(lvl []byte) error {
-	switch strings.ToLower(string(lvl)) {
+	levelStr := strings.ToLower(string(lvl))
+
+	if i, err := strconv.Atoi(levelStr); err == nil {
+		if Trace < Level(i) {
+			*l = Trace
+			return nil
+		}
+	}
+
+	switch levelStr {
 	case "f", "0", "fatal":
 		*l = Fatal
 	case "e", "1", "err", "error":
@@ -50,7 +60,7 @@ func (l *Level) UnmarshalText(lvl []byte) error {
 	case "t", "5", "trace":
 		*l = Trace
 	default:
-		*l = Custom
+		*l = Info
 	}
 
 	return nil
