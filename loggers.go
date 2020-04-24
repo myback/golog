@@ -40,17 +40,6 @@ func (t TextFormatLogger) Write(msg LogMessage) error {
 		KeyError,
 	}
 
-	for _, k := range fixedKey {
-		if v, ok := msg[k]; ok {
-			buf = append(buf, fmt.Sprintf("%s=\"%s\"", k, v))
-			delete(msg, k)
-		}
-	}
-
-	for k, v := range msg {
-		buf = append(buf, fmt.Sprintf("%s=\"%s\"", k, v))
-	}
-
 	var o io.Writer
 	var level Level
 
@@ -66,6 +55,27 @@ func (t TextFormatLogger) Write(msg LogMessage) error {
 			o = t.Stderr
 		} else {
 			o = t.Stdout
+		}
+	}
+
+	for _, k := range fixedKey {
+		if v, ok := msg[k]; ok {
+			switch v.(type) {
+			case int:
+				buf = append(buf, fmt.Sprintf("%s=%d", k, v))
+			default:
+				buf = append(buf, fmt.Sprintf("%s=%q", k, v))
+			}
+			delete(msg, k)
+		}
+	}
+
+	for k, v := range msg {
+		switch v.(type) {
+		case int:
+			buf = append(buf, fmt.Sprintf("%s=%d", k, v))
+		default:
+			buf = append(buf, fmt.Sprintf("%s=%q", k, v))
 		}
 	}
 
