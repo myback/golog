@@ -146,6 +146,10 @@ func (l Log) NewLogMessage(level string) LogMessage {
 }
 
 func (l *Log) Write(msg LogMessage) {
+	if _, ok := msg[KeyTime]; !ok {
+		msg[KeyTime] = time.Now().UTC().Format(l.timeFormat)
+	}
+
 	lvl, ok := msg.Get(KeyLevel, "").(Level)
 	if !ok {
 		lvl = Custom
