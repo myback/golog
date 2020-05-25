@@ -60,7 +60,7 @@ func (l *Level) UnmarshalText(lvl []byte) error {
 	case "t", "5", "trace":
 		*l = Trace
 	default:
-		*l = Info
+		*l = Custom
 	}
 
 	return nil

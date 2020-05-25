@@ -3,64 +3,102 @@ package golog
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 	"time"
 )
 
 const (
-	KeyTime    = "time"
-	KeyLevel   = "level"
-	KeyMessage = "message"
-	KeyError   = "error"
+	KeyTime           = "time"
+	KeyLevel          = "level"
+	KeyMessage        = "message"
+	KeyError          = "error"
+	defaultTimeFormat = "2006-01-02T15:04:05.000Z"
 )
+
+var logger Logger
 
 type Log struct {
 	timeFormat string
 	level      Level
-	logger     Logger
+	//logger     Logger
 }
 
 type LogMessage map[string]interface{}
 
-func (lm LogMessage) Put(k string, v interface{}) {
-	lm[k] = v
+func (lm *LogMessage) Put(k string, v interface{}) *LogMessage {
+	(*lm)[k] = v
+
+	return lm
 }
 
-func (lm LogMessage) PutMessage(v interface{}) {
+func (lm *LogMessage) PutMessage(v interface{}) *LogMessage {
 	lm.Put(KeyMessage, v)
+
+	return lm
 }
 
-func (lm LogMessage) PutError(v interface{}) {
+func (lm *LogMessage) PutError(v interface{}) *LogMessage {
 	lm.Put(KeyError, v)
+
+	return lm
 }
 
-func (lm LogMessage) Get(k string, fallback interface{}) interface{} {
-	if v, ok := lm[k]; ok {
+func (lm *LogMessage) AddTrace() *LogMessage {
+	pc := make([]uintptr, 5)
+	n := runtime.Callers(2, pc)
+	frames := runtime.CallersFrames(pc[:n])
+
+	var frame runtime.Frame
+	for {
+		frame, _ = frames.Next()
+		if strings.Contains(frame.Function, "golog") {
+			if frame.Line == 0 {
+				lm.Put("package", "failed")
+				break
+			}
+
+			continue
+		}
+
+		lm.Put("package", frame.Function)
+		lm.Put("file", fmt.Sprintf("%s:%d", frame.File, frame.Line))
+		break
+	}
+
+	return lm
+}
+
+func (lm *LogMessage) Get(k string, fallback interface{}) interface{} {
+	if v, ok := (*lm)[k]; ok {
 		return v
 	}
 
 	return fallback
 }
 
-func New(lvl Level, logger Logger, fmtTime string) *Log {
+func New(lvl Level, l Logger, fmtTime string) *Log {
 	if lvl == Custom {
 		lvl = Info
 	}
 
-	if logger == nil {
+	if l == nil {
 		logger = TextFormatLogger{
 			Stdout: os.Stdout,
 			Stderr: os.Stderr,
 		}
+	} else {
+		logger = l
 	}
 
 	if fmtTime == "" {
-		fmtTime = "2006-01-02T15:04:05.000Z"
+		fmtTime = defaultTimeFormat
 	}
 
 	return &Log{
 		timeFormat: fmtTime,
 		level:      lvl,
-		logger:     logger,
+		//logger:     logger,
 	}
 }
 
@@ -122,6 +160,7 @@ func (l *Log) Trace(msg interface{}) {
 }
 
 func (l *Log) Tracef(msg LogMessage) {
+	msg.AddTrace()
 	l.print(Trace, msg)
 }
 
@@ -133,15 +172,36 @@ func (l *Log) print(lvl Level, msg LogMessage) {
 	msg[KeyTime] = time.Now().UTC().Format(l.timeFormat)
 	msg[KeyLevel] = lvl.ToString()
 
-	if err := l.logger.Write(msg); err != nil {
+	if err := logger.Write(msg); err != nil {
 		fmt.Fprintf(os.Stderr, "%s ERROR: Print formatter failed: %s", msg["time"], err)
 	}
 }
 
-func (l Log) NewLogMessage(level string) LogMessage {
+func (l *Log) NewLogMessage(level string) LogMessage {
 	return LogMessage{
 		KeyTime:  time.Now().UTC().Format(l.timeFormat),
 		KeyLevel: level,
+	}
+}
+
+func SampleLogging(level string) LogMessage {
+	return LogMessage{
+		KeyTime:  time.Now().UTC().Format(defaultTimeFormat),
+		KeyLevel: level,
+	}
+}
+
+func (lm *LogMessage) Write() {
+	l := logger
+	if l == nil {
+		l = TextFormatLogger{
+			Stdout: os.Stdout,
+			Stderr: os.Stderr,
+		}
+	}
+
+	if err := l.Write(*lm); err != nil {
+		fmt.Fprintf(os.Stderr, "%s ERROR: Print formatter failed: %s", (*lm)[KeyTime], err)
 	}
 }
 
@@ -150,14 +210,11 @@ func (l *Log) Write(msg LogMessage) {
 		msg[KeyTime] = time.Now().UTC().Format(l.timeFormat)
 	}
 
-	lvl, ok := msg.Get(KeyLevel, "").(Level)
-	if !ok {
-		lvl = Custom
-	}
+	lvl := msg.Get(KeyLevel, "custom").(Level)
 
 	if l.isLevel(lvl) || lvl == Custom {
-		if err := l.logger.Write(msg); err != nil {
-			fmt.Fprintf(os.Stderr, "%s ERROR: Print formatter failed: %s", msg["time"], err)
+		if err := logger.Write(msg); err != nil {
+			fmt.Fprintf(os.Stderr, "%s ERROR: Print formatter failed: %s", msg[KeyTime], err)
 		}
 	}
 }
